@@ -64,23 +64,29 @@ fi
 if [ -z "$JAVA_HOME" ]; then
       echo "JAVA_HOME is null, exit..."
       exit 1
+else
+   export JAVA_HOME=$JAVA_HOME
 fi
 if [ -z "$FLINK_HOME" ]; then
     echo "FLINK_HOME is null, CDC cannot be used normally!"
+else
+    export FLINK_HOME=$FLINK_HOME
 fi
 if [ -z "$ACTION_JAR_PATH" ]; then
     echo "ACTION_JAR_PATH is null, CDC cannot be used normally!"
+else
+    export ACTION_JAR_PATH=$ACTION_JAR_PATH
 fi
 
 
 if [ "$DAEMON" = true ]; then
   nohup $JAVA_HOME/bin/java $JAVA_OPTS \
-    -cp "$PAIMON_UI_HOME/conf:$PAIMON_UI_HOME/libs/*" \
+    -cp "$PAIMON_UI_HOME/config:$PAIMON_UI_HOME/libs/*" \
     org.apache.paimon.web.server.PaimonWebServerApplication \
     > /dev/null 2>&1 &
   echo "Paimon Web Server started in daemon."
 else
   $JAVA_HOME/bin/java $JAVA_OPTS \
-    -cp "$PAIMON_UI_HOME/conf:$PAIMON_UI_HOME/libs/*" \
+    -cp "$PAIMON_UI_HOME/config:$PAIMON_UI_HOME/libs/*" \
     org.apache.paimon.web.server.PaimonWebServerApplication
 fi

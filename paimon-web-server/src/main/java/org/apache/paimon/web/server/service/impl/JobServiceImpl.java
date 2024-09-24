@@ -25,6 +25,7 @@ import org.apache.paimon.web.engine.flink.common.result.FetchResultParams;
 import org.apache.paimon.web.engine.flink.common.status.JobStatus;
 import org.apache.paimon.web.engine.flink.sql.gateway.model.SessionEntity;
 import org.apache.paimon.web.gateway.config.ExecutionConfig;
+import org.apache.paimon.web.gateway.enums.DeploymentMode;
 import org.apache.paimon.web.gateway.enums.EngineType;
 import org.apache.paimon.web.gateway.provider.ExecutorFactoryProvider;
 import org.apache.paimon.web.server.context.LogContextHolder;
@@ -141,7 +142,8 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, JobInfo> implements J
                     String.format(
                             "Starting to submit %s %s job...",
                             jobSubmitDTO.getTaskType(), executeMode));
-            ExecutionResult executionResult = executor.executeSql(jobSubmitDTO.getStatements());
+            ExecutionResult executionResult =
+                    executor.executeSql(jobSubmitDTO.getStatements(), jobSubmitDTO.getMaxRows());
             if (StringUtils.isNotBlank(executionResult.getJobId())) {
                 JobInfo jobInfo = buildJobInfo(executionResult, jobSubmitDTO);
                 this.save(jobInfo);
@@ -302,8 +304,8 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, JobInfo> implements J
 
         if (taskType.equals("Flink")) {
             QueryWrapper<ClusterInfo> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("type", "Flink");
-            List<ClusterInfo> clusters = clusterService.list();
+            queryWrapper.eq("deployment_mode", DeploymentMode.FLINK_SQL_GATEWAY.getType());
+            List<ClusterInfo> clusters = clusterService.list(queryWrapper);
             for (ClusterInfo cluster : clusters) {
                 try {
                     SessionEntity session =
@@ -317,7 +319,7 @@ public class JobServiceImpl extends ServiceImpl<JobMapper, JobInfo> implements J
                         return;
                     }
 
-                    ExecutionResult executionResult = executor.executeSql(SHOW_JOBS_STATEMENT);
+                    ExecutionResult executionResult = executor.executeSql(SHOW_JOBS_STATEMENT, 0);
                     List<Map<String, Object>> jobsData = executionResult.getData();
                     for (Map<String, Object> jobData : jobsData) {
                         String jobId = (String) jobData.get("job id");

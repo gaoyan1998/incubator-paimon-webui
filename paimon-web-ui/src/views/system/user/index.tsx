@@ -18,6 +18,7 @@ under the License. */
 import type { TableColumns } from 'naive-ui/es/data-table/src/interface'
 import dayjs from 'dayjs'
 import { EditOutlined } from '@vicons/antd'
+import { Add } from '@vicons/ionicons5'
 
 import UserForm from './components/user-form'
 import UserDelete from './components/user-delete'
@@ -115,10 +116,6 @@ export default defineComponent({
     async function handleUpdateModal(user: UserDTO) {
       formType.value = 'update'
 
-      delete user.createTime
-      delete user.updateTime
-      delete user.roles
-
       formValue.value = { ...user }
       formVisible.value = true
     }
@@ -192,7 +189,12 @@ export default defineComponent({
           <n-space vertical>
             <n-space justify="space-between">
               <n-space>
-                <n-button onClick={this.handleCreateModal} type="primary">{this.t('system.user.add')}</n-button>
+                <n-button onClick={this.handleCreateModal} type="primary">
+                  {{
+                    icon: () => <n-icon component={Add} />,
+                    default: () => this.t('system.user.create'),
+                  }}
+                </n-button>
               </n-space>
               <n-space>
                 <></>

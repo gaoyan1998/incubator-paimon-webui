@@ -1,21 +1,20 @@
-<!--
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
+---
+license: |
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
 
-  http://www.apache.org/licenses/LICENSE-2.0
+      https://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
--->
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+---
 # Quick Start
 
 This brief tutorial will guide you through the steps to deploy and utilize Paimon Web effectively.
@@ -49,6 +48,16 @@ scripts
 ui
 ```
 
+## Download additional dependencies(Optional)
+
+The released installation package of Paimon Web does not include some additional dependencies, such as `S3` and `OSS`. When using these dependencies to create a Catalog or as the default storage for your Paimon tables, download them from the [Apache Maven Repository](https://repo.maven.apache.org/maven2/org/apache/paimon/) and move them to the `$PAIMON_WEBUI_HOME/libs` directory.
+
+```shell
+[root@paimon ~]# wget https://repo.maven.apache.org/maven2/org/apache/paimon/paimon-oss/xxx/paimon-oss-xxx.jar
+[root@paimon ~]# wget https://repo.maven.apache.org/maven2/org/apache/paimon/paimon-s3/xxx/paimon-s3-xxx.jar
+[root@paimon ~]# mv paimon-oss-xxx.jar paimon-s3-xxx.jar $PAIMON_WEBUI_HOME/libs
+```
+
 ## Creating a Database and Executing SQL Scripts
 
 To set up your environment, create a database named `paimon`. Then, execute the `paimon-mysql.sql` script located in the `scripts` directory.
@@ -66,7 +75,7 @@ These changes will ensure that Paimon Web runs smoothly with your specific setup
 
 To configure the environment for your application, follow these steps:
 
-1. **Set Environment Variables**: Modify the `env.sh` script located in the `bin` directory. You'll need to configure variables such as `FLINK_HOME`, `ACTION_JAR_PATH`, and `JAVA_HOME`.
+1. **Set Environment Variables**: Modify the `env.sh` script located in the `bin` directory. You can configure variables such as `FLINK_HOME`, `ACTION_JAR_PATH`, and `JAVA_HOME`.
 2. **Optional Settings**: If you are not using the CDC (Change Data Capture) function, there is no need to configure `FLINK_HOME` and `ACTION_JAR_PATH`.
 
 This setup will prepare your system to properly run the application with the necessary configurations.
@@ -74,7 +83,7 @@ This setup will prepare your system to properly run the application with the nec
 ```shell
 [root@paimon ~]# cd bin
 [root@paimon ~]# chmod 755 env.sh
-[root@paimon ~]# vim evn.sh
+[root@paimon ~]# vi env.sh
 ```
 
 ## Starting the Service
@@ -85,7 +94,7 @@ To launch the service, follow these steps:
 ```shell
 [root@paimon ~]# bin/start.sh
 ```
-2. **Access the Web Interface**: Open a web browser and enter the URL `http://{ip}:{port}` to navigate to the Paimon web page.
+2. **Access the Web Interface**: Open a web browser and enter the URL `http://{ip}:{port}/ui/login` to navigate to the Paimon web page.
 
 Ensure you replace `{ip}` and `{port}` with the actual ip address and port number where the service is running.
 
@@ -115,3 +124,4 @@ After the SQL Gateway is up and running, proceed to create a cluster instance th
 With the cluster ready, you can now execute SQL commands. Go to the SQL IDE page on the Paimon web interface, where you can write and execute your SQL queries.
 
 ![img_2.png](../../public/img/img_2.png)
+

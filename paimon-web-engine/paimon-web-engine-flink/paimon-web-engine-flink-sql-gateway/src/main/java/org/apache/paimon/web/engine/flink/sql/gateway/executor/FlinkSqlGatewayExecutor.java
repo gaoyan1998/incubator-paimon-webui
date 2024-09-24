@@ -20,14 +20,18 @@ package org.apache.paimon.web.engine.flink.sql.gateway.executor;
 
 import org.apache.paimon.web.engine.flink.common.executor.Executor;
 import org.apache.paimon.web.engine.flink.common.operation.FlinkSqlOperationType;
-import org.apache.paimon.web.engine.flink.common.parser.StatementParser;
+import org.apache.paimon.web.engine.flink.common.parser.CustomSqlParser;
 import org.apache.paimon.web.engine.flink.common.result.ExecutionResult;
 import org.apache.paimon.web.engine.flink.common.result.FetchResultParams;
+import org.apache.paimon.web.engine.flink.common.status.JobStatus;
 import org.apache.paimon.web.engine.flink.sql.gateway.client.SqlGatewayClient;
 import org.apache.paimon.web.engine.flink.sql.gateway.model.SessionEntity;
 import org.apache.paimon.web.engine.flink.sql.gateway.utils.CollectResultUtil;
 import org.apache.paimon.web.engine.flink.sql.gateway.utils.FlinkSqlStatementSetBuilder;
 
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.table.gateway.api.results.ResultSet;
 import org.apache.flink.table.gateway.rest.message.statement.FetchResultsResponseBody;
 
@@ -53,16 +57,18 @@ public class FlinkSqlGatewayExecutor implements Executor {
     }
 
     @Override
-    public ExecutionResult executeSql(String multiStatement) throws Exception {
-        String[] statements = StatementParser.parse(multiStatement);
+    public ExecutionResult executeSql(String multiStatement, int maxRows) throws Exception {
+        CustomSqlParser customSqlParser = new CustomSqlParser(multiStatement, maxRows);
+        SqlNodeList sqlNodeList = customSqlParser.parseStmtList();
         List<String> insertStatements = new ArrayList<>();
         ExecutionResult executionResult = null;
 
-        for (String statement : statements) {
-            FlinkSqlOperationType operationType = FlinkSqlOperationType.getOperationType(statement);
+        for (SqlNode sqlNode : sqlNodeList) {
+            FlinkSqlOperationType operationType =
+                    FlinkSqlOperationType.getOperationType(sqlNode.toString());
 
             if (operationType == null) {
-                String operationTypeString = extractSqlOperationType(statement);
+                String operationTypeString = extractSqlOperationType(sqlNode.toString());
                 throw new UnsupportedOperationException(
                         "Unsupported operation type: " + operationTypeString);
             }
@@ -73,17 +79,17 @@ public class FlinkSqlGatewayExecutor implements Executor {
                         throw new UnsupportedOperationException(
                                 "Cannot execute DQL statement with pending INSERT statements.");
                     }
-                    executionResult = executeDqlStatement(statement, operationType);
+                    executionResult = executeDqlStatement(sqlNode.toString(), operationType);
                     break;
                 case DML:
                     if (operationType.getType().equals(FlinkSqlOperationType.INSERT.getType())) {
-                        insertStatements.add(statement);
+                        insertStatements.add(sqlNode.toString());
                     } else {
-                        executionResult = executeDmlStatement(statement);
+                        executionResult = executeDmlStatement(sqlNode.toString());
                     }
                     break;
                 default:
-                    client.executeStatement(session.getSessionId(), statement, null);
+                    client.executeStatement(session.getSessionId(), sqlNode.toString(), null);
                     break;
             }
 
@@ -98,6 +104,14 @@ public class FlinkSqlGatewayExecutor implements Executor {
             executionResult = executeDmlStatement(combinedStatement);
         }
 
+        if (executionResult == null) {
+            executionResult =
+                    new ExecutionResult.Builder()
+                            .shouldFetchResult(false)
+                            .status(JobStatus.FINISHED.getValue())
+                            .build();
+        }
+
         return executionResult;
     }
 
@@ -109,8 +123,12 @@ public class FlinkSqlGatewayExecutor implements Executor {
         ExecutionResult.Builder builder =
                 CollectResultUtil.collectSqlGatewayResult(results.getResults())
                         .submitId(operationId);
-        if (operationType.getType().equals(FlinkSqlOperationType.SELECT.getType())) {
-            builder.jobId(getJobIdFromResults(results)).shouldFetchResult(true);
+        JobID jobId = results.getJobID();
+        if (jobId != null
+                && operationType.getType().equals(FlinkSqlOperationType.SELECT.getType())) {
+            builder.jobId(jobId.toString()).shouldFetchResult(true);
+        } else if (jobId == null) {
+            builder.shouldFetchResult(false).status(JobStatus.FINISHED.getValue());
         }
         return builder.build();
     }
